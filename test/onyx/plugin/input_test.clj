@@ -1,7 +1,7 @@
 (ns onyx.plugin.input-test
   (:require [aero.core :refer [read-config]]
             [clojure.test :refer [deftest is]]
-            [datomic.api :as d]
+            [onyx.datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
@@ -85,7 +85,7 @@
     (try
       (with-test-env [test-env [3 env-config peer-config]]
         (onyx.test-helper/validate-enough-peers! test-env job)
-        (->> job 
+        (->> job
              (onyx.api/submit-job peer-config)
              :job-id
              (onyx.test-helper/feedback-exception! peer-config))

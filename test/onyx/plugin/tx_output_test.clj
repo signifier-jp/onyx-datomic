@@ -2,7 +2,7 @@
   (:require [aero.core :refer [read-config]]
             [clojure.core.async :refer [>!! close!]]
             [clojure.test :refer [deftest is]]
-            [datomic.api :as d]
+            [onyx.datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
@@ -28,8 +28,8 @@
     (-> base-job
         (add-task (core-async/input :in batch-settings))
         (add-task (write-bulk-tx-datoms :out (merge {:datomic/uri db-uri
-                                                  :datomic/partition :com.mdrogalis/people}
-                                                 batch-settings))))))
+                                                     :datomic/partition :com.mdrogalis/people}
+                                                    batch-settings))))))
 
 (defn ensure-datomic!
   ([db-uri data]

@@ -2,7 +2,7 @@
   "Tests whether the plugin is fault tolerant. Won't make any progress if it restarts each time"
   (:require [aero.core :refer [read-config]]
             [clojure.test :refer [deftest is]]
-            [datomic.api :as d]
+            [onyx.datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
@@ -65,12 +65,12 @@
                          :task-scheduler :onyx.task-scheduler/balanced})]
     (-> base-job
         (add-task (read-datoms :read-datoms
-                                (merge {:datomic/uri db-uri
-                                        :datomic/t t
-                                        :datomic/datoms-index :eavt
-                                        :datomic/datoms-per-segment 1
-                                        :onyx/max-peers 1}
-                                       batch-settings)))
+                               (merge {:datomic/uri db-uri
+                                       :datomic/t t
+                                       :datomic/datoms-index :eavt
+                                       :datomic/datoms-per-segment 1
+                                       :onyx/max-peers 1}
+                                      batch-settings)))
         (add-task (core-async/output :persist (assoc batch-settings :onyx/n-peers 1) 1000000)))))
 
 (defn ensure-datomic!
@@ -98,24 +98,22 @@
         (range 10000)))
 
 #_(deftest datomic-input-fault-tolerance-test
-  (let [db-uri (str "datomic:mem://" (java.util.UUID/randomUUID))
-        {:keys [env-config peer-config]} (read-config
-                                          (clojure.java.io/resource "config.edn")
-                                          {:profile :test})
-        peer-config (assoc peer-config :onyx.peer/coordinator-barrier-period-ms 50)
-        _ (mapv (partial ensure-datomic! db-uri) [[] schema people])
-        t (d/next-t (d/db (d/connect db-uri)))
-        job (build-job db-uri t 10 1000)
-        {:keys [persist]} (get-core-async-channels job)]
-    (try
-      (with-test-env [test-env [5 env-config peer-config]]
-        (->> job 
-             (onyx.api/submit-job peer-config)
-             :job-id
-             (onyx.test-helper/feedback-exception! peer-config))
+    (let [db-uri (str "datomic:mem://" (java.util.UUID/randomUUID))
+          {:keys [env-config peer-config]} (read-config
+                                            (clojure.java.io/resource "config.edn")
+                                            {:profile :test})
+          peer-config (assoc peer-config :onyx.peer/coordinator-barrier-period-ms 50)
+          _ (mapv (partial ensure-datomic! db-uri) [[] schema people])
+          t (d/next-t (d/db (d/connect db-uri)))
+          job (build-job db-uri t 10 1000)
+          {:keys [persist]} (get-core-async-channels job)]
+      (try
+        (with-test-env [test-env [5 env-config peer-config]]
+          (->> job
+               (onyx.api/submit-job peer-config)
+               :job-id
+               (onyx.test-helper/feedback-exception! peer-config))
 
-        (is (= (sort (mapcat #(apply concat %) (map :names @test-state)))
-               (sort (map :user/name people)))))
-
-      
-      (finally (d/delete-database db-uri)))))
+          (is (= (sort (mapcat #(apply concat %) (map :names @test-state)))
+                 (sort (map :user/name people)))))
+        (finally (d/delete-database db-uri)))))

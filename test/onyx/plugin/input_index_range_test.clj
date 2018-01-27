@@ -1,7 +1,7 @@
 (ns onyx.plugin.input-index-range-test
   (:require [aero.core :refer [read-config]]
             [clojure.test :refer [deftest is]]
-            [datomic.api :as d]
+            [onyx.datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
@@ -22,14 +22,14 @@
                          :task-scheduler :onyx.task-scheduler/balanced})]
     (-> base-job
         (add-task (read-index-range :read-index-datoms
-                                       (merge {:datomic/uri db-uri
-                                               :datomic/t t
-                                               :datomic/index-attribute :user/name
-                                               :datomic/index-range-start "Benti"
-                                               :datomic/index-range-end "Kristen"
-                                               :datomic/datoms-per-segment 20
-                                               :onyx/max-peers 1}
-                                              batch-settings)))
+                                    (merge {:datomic/uri db-uri
+                                            :datomic/t t
+                                            :datomic/index-attribute :user/name
+                                            :datomic/index-range-start "Benti"
+                                            :datomic/index-range-end "Kristen"
+                                            :datomic/datoms-per-segment 20
+                                            :onyx/max-peers 1}
+                                           batch-settings)))
         (add-task (core-async/output :persist batch-settings)))))
 
 (defn ensure-datomic!
@@ -71,7 +71,6 @@
 (defn my-test-query [{:keys [datoms] :as segment}]
   {:names (d/q query datoms)})
 
-
 (deftest read-index-range-test
   (let [db-uri (str "datomic:mem://" (java.util.UUID/randomUUID))
         {:keys [env-config peer-config]} (read-config
@@ -84,7 +83,7 @@
     (try
       (with-test-env [test-env [3 env-config peer-config]]
         (onyx.test-helper/validate-enough-peers! test-env job)
-        (->> job 
+        (->> job
              (onyx.api/submit-job peer-config)
              :job-id
              (onyx.test-helper/feedback-exception! peer-config))

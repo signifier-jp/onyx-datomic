@@ -1,8 +1,7 @@
 (ns onyx.plugin.datomic
   (:require [clojure.core.async :refer [chan >! >!! <!! poll! offer! close!
                                         thread timeout alts!! go-loop
-                                        sliding-buffer]] 
-            [datomic.api :as d]
+                                        sliding-buffer]]
             [onyx.types :as t]
             [onyx.plugin.protocols :as p]
             [onyx.static.default-vals :refer [default-vals]]
@@ -10,21 +9,21 @@
             [onyx.static.uuid :refer [random-uuid]]
             [onyx.extensions :as extensions]
             [onyx.schema :as os]
+            [onyx.datomic.api :as d]
+            [schema.core :as s]
             [taoensso.timbre :refer [info debug fatal]])
   (:import [java.util.concurrent.locks LockSupport]
            [java.util.concurrent.atomic AtomicLong]))
 
 ;;; Helpers
 
+(d/create-database "test1")
+
 (defn safe-connect [task-map]
-  (if-let [uri (:datomic/uri task-map)]
-    (d/connect uri)
-    (throw (ex-info ":datomic/uri missing from write-datoms task-map." task-map))))
+  (d/safe-connect task-map))
 
 (defn safe-as-of [task-map conn]
-  (if-let [t (:datomic/t task-map)]
-    (d/as-of (d/db conn) t)
-    (throw (ex-info ":datomic/t missing from write-datoms task-map." task-map))))
+  (d/safe-as-of task-map conn))
 
 (defn safe-datoms-per-segment [task-map]
   (or (:datomic/datoms-per-segment task-map)
@@ -71,7 +70,7 @@
   (start [this event]
     this)
 
-  (stop [this event] 
+  (stop [this event]
     this)
 
   p/Checkpointed
@@ -96,7 +95,7 @@
     @drained?)
 
   (poll! [this _ _]
-    (let [read-datoms (mapv #(unroll-datom db %) (take datoms-per-segment @datoms))] 
+    (let [read-datoms (mapv #(unroll-datom db %) (take datoms-per-segment @datoms))]
       (vswap! datoms #(drop datoms-per-segment %))
       (if (empty? read-datoms)
         (do (vreset! drained? true)
@@ -127,14 +126,14 @@
   "Turns a log datom into a vector of :eavt+op."
   [datom]
   ;; strip out transaction functions as they are not serializable in onyx
-  (if-not (instance? datomic.function.Function (:v datom))
+  (if-not (d/instance-of-datomic-function? (:v datom))
     [(:e datom)
      (:a datom)
      (:v datom)
      (:tx datom)
      (:added datom)]))
 
- (defn close-read-log-resources
+(defn close-read-log-resources
   [{:keys [] :as event} lifecycle]
   {})
 
@@ -154,21 +153,21 @@
   {})
 
 (defn tx-range [conn start-tx]
-  (let [log (d/log conn)] 
+  (let [log (d/log conn)]
     (d/tx-range log start-tx nil)))
 
 (defrecord DatomicLogInput
-  [task-map task-id batch-size batch-timeout conn start-tx end-tx read-offset txes top-read-tx completed?]
+           [task-map task-id batch-size batch-timeout conn start-tx end-tx read-offset txes top-read-tx completed?]
   p/Plugin
   (start [this event]
     this)
 
-  (stop [this event] 
+  (stop [this event]
     this)
 
   p/Checkpointed
   (checkpoint [this]
-    {:largest @top-read-tx 
+    {:largest @top-read-tx
      :status :incomplete})
 
   (recover! [this replica-version checkpoint]
@@ -182,7 +181,7 @@
         (vreset! completed? false)
         (vreset! top-read-tx start-tx)))
     this)
-  
+
   (checkpointed! [this epoch]
     true)
 
@@ -198,26 +197,26 @@
     (if-let [tx (first @txes)]
       (let [t (:t tx)]
         (if (and end-tx (> t end-tx))
-          (do 
-           (vreset! completed? true)
-           (vreset! txes nil)
-           nil)
           (do
-           (.set ^AtomicLong read-offset t)
-           (vreset! top-read-tx t) 
-           (vswap! txes rest)
-           (log-entry->segment tx))))
+            (vreset! completed? true)
+            (vreset! txes nil)
+            nil)
+          (do
+            (.set ^AtomicLong read-offset t)
+            (vreset! top-read-tx t)
+            (vswap! txes rest)
+            (log-entry->segment tx))))
       (if (and end-tx (>= @top-read-tx end-tx))
-        (do 
-         (vreset! completed? true)
-         (vreset! txes nil)
-         nil)
+        (do
+          (vreset! completed? true)
+          (vreset! txes nil)
+          nil)
         (do
          ;; Poll for more messages
-         (when-not @completed?
-           (when (empty? (vreset! txes (tx-range conn (inc @top-read-tx))))
-             (LockSupport/parkNanos (* batch-timeout 1000000))))
-         nil)))))
+          (when-not @completed?
+            (when (empty? (vreset! txes (tx-range conn (inc @top-read-tx))))
+              (LockSupport/parkNanos (* batch-timeout 1000000))))
+          nil)))))
 
 (defn read-log [{:keys [onyx.core/task-map onyx.core/task-id onyx.core/monitoring] :as event}]
   (let [conn (safe-connect task-map)
@@ -226,7 +225,7 @@
         start-tx (:datomic/log-start-tx task-map)
         end-tx (:datomic/log-end-tx task-map)
         read-offset (:read-offset monitoring)]
-    (->DatomicLogInput task-map task-id batch-size batch-timeout conn start-tx end-tx 
+    (->DatomicLogInput task-map task-id batch-size batch-timeout conn start-tx end-tx
                        read-offset (volatile! nil) (volatile! nil) (volatile! false))))
 
 (def read-log-calls
@@ -250,13 +249,12 @@
   [{:keys [onyx.core/pipeline]} lifecycle]
   {:datomic/conn (:conn pipeline)})
 
-
 (defrecord DatomicWriteDatoms [conn partition]
   p/Plugin
-  (start [this event] 
+  (start [this event]
     this)
 
-  (stop [this event] 
+  (stop [this event]
     this)
 
   p/BarrierSynchronization
@@ -281,10 +279,10 @@
 
   (write-batch [this {:keys [onyx.core/write-batch]} replica _]
     @(d/transact conn
-                 (map (fn [segment] 
+                 (map (fn [segment]
                         (if (and partition (not (sequential? segment)))
                           (assoc segment :db/id (d/tempid partition))
-                          segment)) 
+                          segment))
                       write-batch))
     true))
 
@@ -296,10 +294,10 @@
 
 (defrecord DatomicWriteBulkDatoms [conn]
   p/Plugin
-  (start [this event] 
+  (start [this event]
     this)
 
-  (stop [this event] 
+  (stop [this event]
     this)
 
   p/Checkpointed
@@ -315,7 +313,7 @@
   (synced? [this epoch]
     true)
 
-  (completed? [this] 
+  (completed? [this]
     true)
 
   p/Output
@@ -335,16 +333,16 @@
 
 (defrecord DatomicWriteBulkDatomsAsync [conn]
   p/Plugin
-  (start [this event] 
+  (start [this event]
     this)
 
-  (stop [this event] 
+  (stop [this event]
     this)
 
   p/BarrierSynchronization
   (synced? [this epoch]
     true)
-  (completed? [this] 
+  (completed? [this]
     true)
 
   p/Checkpointed
@@ -398,7 +396,7 @@
 (defn inject-db [{:keys [onyx.core/params] :as event} {:keys [datomic/basis-t datomic/uri onyx/param?] :as lifecycle}]
   (when-not uri
     (throw (ex-info "Missing :datomic/uri in inject-db-calls lifecycle." lifecycle)))
-  (let [conn (d/connect (:datomic/uri lifecycle))
+  (let [conn (safe-connect lifecycle)
         db (cond-> (d/db conn)
              basis-t (d/as-of basis-t))]
     {:datomic/conn conn
@@ -411,10 +409,7 @@
   {:lifecycle/before-task-start inject-db})
 
 (defn inject-conn [{:keys [onyx.core/params] :as event} {:keys [datomic/uri onyx/param?] :as lifecycle}]
-  (when-not uri
-    (throw (ex-info "Missing :datomic/uri in inject-conn-calls lifecycle."
-                    lifecycle)))
-  (let [conn (d/connect uri)]
+  (let [conn (safe-connect lifecycle)]
     {:datomic/conn conn
      :onyx.core/params (if param?
                          (conj params conn)
