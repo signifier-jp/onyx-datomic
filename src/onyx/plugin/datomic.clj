@@ -17,8 +17,6 @@
 
 ;;; Helpers
 
-(d/create-database "test1")
-
 (defn safe-connect [task-map]
   (d/safe-connect task-map))
 
@@ -153,8 +151,7 @@
   {})
 
 (defn tx-range [conn start-tx]
-  (let [log (d/log conn)]
-    (d/tx-range log start-tx nil)))
+  (d/tx-range conn start-tx))
 
 (defrecord DatomicLogInput
            [task-map task-id batch-size batch-timeout conn start-tx end-tx read-offset txes top-read-tx completed?]

@@ -1,10 +1,11 @@
 (ns onyx.plugin.input-index-range-test
   (:require [aero.core :refer [read-config]]
             [clojure.test :refer [deftest is]]
-            [onyx.datomic.api :as d]
+            [datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
+            [onyx.datomic.api :refer [datomic-lib-type]]
             [onyx.plugin datomic
              [core-async :refer [take-segments! get-core-async-channels]]]
             [onyx.tasks
@@ -72,10 +73,14 @@
   {:names (d/q query datoms)})
 
 (deftest read-index-range-test
-  (let [db-uri (str "datomic:mem://" (java.util.UUID/randomUUID))
-        {:keys [env-config peer-config]} (read-config
+  (let [{:keys [env-config peer-config]} (read-config
                                           (clojure.java.io/resource "config.edn")
                                           {:profile :test})
+        db-uri (str (get-in (read-config
+                             (clojure.java.io/resource "config.edn")
+                             {:profile (datomic-lib-type)})
+                            [:datomic-config :datomic/uri])
+                    (java.util.UUID/randomUUID))
         _ (mapv (partial ensure-datomic! db-uri) [[] schema people])
         t (d/next-t (d/db (d/connect db-uri)))
         job (build-job db-uri t 10 1000)

@@ -39,6 +39,26 @@
               :optional? true
               :doc "Datomic database name. Required for datomic-cloud."}
 
+             :datomic-client/access-key
+             {:type :string
+              :optional? true
+              :doc "access key for Datomic On-Prem via Client API."}
+
+             :datomic-client/secret
+             {:type :string
+              :optional? true
+              :doc "secret for Datomic On-Prem via Client API."}
+
+             :datomic-client/endpoint
+             {:type :string
+              :optional? true
+              :doc "hostname:port_number for Datomic On-Prem via Client API."}
+
+             :datomic-client/db-name
+             {:type :string
+              :optional? true
+              :doc "database name for Datomic On-Prem via Client API."}
+
              :datomic/t
              {:type :integer
               :doc "The t-value of the database to read from."}
@@ -98,6 +118,26 @@
              {:type :string
               :optional? true
               :doc "Datomic database name. Required for datomic-cloud."}
+
+             :datomic-client/access-key
+             {:type :string
+              :optional? true
+              :doc "access key for Datomic On-Prem via Client API."}
+
+             :datomic-client/secret
+             {:type :string
+              :optional? true
+              :doc "secret for Datomic On-Prem via Client API."}
+
+             :datomic-client/endpoint
+             {:type :string
+              :optional? true
+              :doc "hostname:port_number for Datomic On-Prem via Client API."}
+
+             :datomic-client/db-name
+             {:type :string
+              :optional? true
+              :doc "database name for Datomic On-Prem via Client API."}
 
              :datomic/t
              {:type :integer
@@ -162,6 +202,26 @@
               :optional? true
               :doc "Datomic database name. Required for datomic-cloud."}
 
+             :datomic-client/access-key
+             {:type :string
+              :optional? true
+              :doc "access key for Datomic On-Prem via Client API."}
+
+             :datomic-client/secret
+             {:type :string
+              :optional? true
+              :doc "secret for Datomic On-Prem via Client API."}
+
+             :datomic-client/endpoint
+             {:type :string
+              :optional? true
+              :doc "hostname:port_number for Datomic On-Prem via Client API."}
+
+             :datomic-client/db-name
+             {:type :string
+              :optional? true
+              :doc "database name for Datomic On-Prem via Client API."}
+
              :datomic/log-start-tx
              {:type :integer
               :optional? true
@@ -224,6 +284,26 @@
               :optional? true
               :doc "Datomic database name. Required for datomic-cloud."}
 
+             :datomic-client/access-key
+             {:type :string
+              :optional? true
+              :doc "access key for Datomic On-Prem via Client API."}
+
+             :datomic-client/secret
+             {:type :string
+              :optional? true
+              :doc "secret for Datomic On-Prem via Client API."}
+
+             :datomic-client/endpoint
+             {:type :string
+              :optional? true
+              :doc "hostname:port_number for Datomic On-Prem via Client API."}
+
+             :datomic-client/db-name
+             {:type :string
+              :optional? true
+              :doc "database name for Datomic On-Prem via Client API."}
+
              :datomic/partition
              {:type :keyword
               :optional? true
@@ -266,6 +346,26 @@
               :optional? true
               :doc "Datomic database name. Required for datomic-cloud."}
 
+             :datomic-client/access-key
+             {:type :string
+              :optional? true
+              :doc "access key for Datomic On-Prem via Client API."}
+
+             :datomic-client/secret
+             {:type :string
+              :optional? true
+              :doc "secret for Datomic On-Prem via Client API."}
+
+             :datomic-client/endpoint
+             {:type :string
+              :optional? true
+              :doc "hostname:port_number for Datomic On-Prem via Client API."}
+
+             :datomic-client/db-name
+             {:type :string
+              :optional? true
+              :doc "database name for Datomic On-Prem via Client API."}
+
              :datomic/partition
              {:type :keyword
               :optional? true
@@ -307,6 +407,26 @@
              {:type :string
               :optional? true
               :doc "Datomic database name. Required for datomic-cloud."}
+
+             :datomic-client/access-key
+             {:type :string
+              :optional? true
+              :doc "access key for Datomic On-Prem via Client API."}
+
+             :datomic-client/secret
+             {:type :string
+              :optional? true
+              :doc "secret for Datomic On-Prem via Client API."}
+
+             :datomic-client/endpoint
+             {:type :string
+              :optional? true
+              :doc "hostname:port_number for Datomic On-Prem via Client API."}
+
+             :datomic-client/db-name
+             {:type :string
+              :optional? true
+              :doc "database name for Datomic On-Prem via Client API."}
 
              :datomic/partition
              {:type :keyword
@@ -353,6 +473,10 @@
      :datomic-cloud/endpoint
      :datomic-cloud/proxy-port
      :datomic-cloud/db-name
+     :datomic-client/access-key
+     :datomic-client/secret
+     :datomic-client/endpoint
+     :datomic-client/db-name
      :datomic/t
      :datomic/datoms-index
      :datomic/datoms-components
@@ -367,6 +491,10 @@
      :datomic-cloud/endpoint
      :datomic-cloud/proxy-port
      :datomic-cloud/db-name
+     :datomic-client/access-key
+     :datomic-client/secret
+     :datomic-client/endpoint
+     :datomic-client/db-name
      :datomic/t
      :datomic/index-attribute
      :datomic/index-range-start
@@ -382,6 +510,10 @@
      :datomic-cloud/endpoint
      :datomic-cloud/proxy-port
      :datomic-cloud/db-name
+     :datomic-client/access-key
+     :datomic-client/secret
+     :datomic-client/endpoint
+     :datomic-client/db-name
      :datomic/log-start-tx
      :datomic/log-end-tx
      :checkpoint/force-reset?
@@ -396,6 +528,10 @@
      :datomic-cloud/endpoint
      :datomic-cloud/proxy-port
      :datomic-cloud/db-name
+     :datomic-client/access-key
+     :datomic-client/secret
+     :datomic-client/endpoint
+     :datomic-client/db-name
      :datomic/partition]
 
     :onyx.plugin.datomic/commit-bulk-tx
@@ -406,6 +542,10 @@
      :datomic-cloud/endpoint
      :datomic-cloud/proxy-port
      :datomic-cloud/db-name
+     :datomic-client/access-key
+     :datomic-client/secret
+     :datomic-client/endpoint
+     :datomic-client/db-name
      :datomic/partition]
 
     :onyx.plugin.datomic/commit-bulk-tx-async
@@ -416,4 +556,8 @@
      :datomic-cloud/endpoint
      :datomic-cloud/proxy-port
      :datomic-cloud/db-name
+     :datomic-client/access-key
+     :datomic-client/secret
+     :datomic-client/endpoint
+     :datomic-client/db-name
      :datomic/partition]}})

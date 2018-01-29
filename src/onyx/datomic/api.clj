@@ -1,42 +1,45 @@
 (ns onyx.datomic.api
-  (:require [onyx.datomic.protocols :as dp])
-  (:import [java.io.FileNotFoundException]))
+  (:require [clojure.string :as str]
+            [onyx.datomic.protocols :as dp])
+  (:import [java.io FileNotFoundException]
+           [java.net URI]))
 
-(try (require '[datomic.api :as d])
-     (catch java.io.FileNotFoundException _ (require '[datomic.client.api :as d])))
+(try (require '[datomic.client.api :as d])
+     (catch FileNotFoundException _ (require '[datomic.api :as d])))
 
-(defn datomic-lib-type []
-  (if (find-ns 'datomic.api)
-    :peer
-    :cloud))
+(defn- _datomic-lib-type []
+  (if (find-ns 'datomic.client.api)
+    :client
+    :peer))
+
+(def datomic-lib-type (memoize _datomic-lib-type))
 
 (case (datomic-lib-type)
   :peer  (require '[onyx.datomic.peer :refer [new-datomic-impl]])
-  :cloud (require '[onyx.datomic.cloud :refer [new-datomic-impl]]))
+  :client (require '[onyx.datomic.client :refer [new-datomic-impl]]))
 
 (defn- _datomic-lib []
   (new-datomic-impl))
 
-;(def datomic-lib (memoize _datomic-lib))
-(def datomic-lib _datomic-lib)
+(def datomic-lib (memoize _datomic-lib))
+
+(defn db-name-in-uri [uri]
+  (-> uri
+      URI.
+      .getSchemeSpecificPart
+      (str/split #"/")
+      last))
 
 (def safe-connect (partial dp/safe-connect (datomic-lib)))
 (def safe-as-of (partial dp/safe-as-of (datomic-lib)))
 (def instance-of-datomic-function? (partial dp/instance-of-datomic-function? (datomic-lib)))
+(def tx-range (partial dp/tx-range (datomic-lib)))
 
 (def as-of (dp/as-of (datomic-lib)))
-(def connect (dp/connect (datomic-lib)))
-(def create-database (dp/create-database (datomic-lib)))
 (def datoms (dp/datoms (datomic-lib)))
 (def db (dp/db (datomic-lib)))
-(def delete-database (dp/delete-database (datomic-lib)))
-(def entity (dp/entity (datomic-lib)))
 (def ident (dp/ident (datomic-lib)))
 (def index-range (dp/index-range (datomic-lib)))
-(def log (dp/log (datomic-lib)))
-(def next-t (dp/next-t (datomic-lib)))
-(def q (dp/q (datomic-lib)))
 (def tempid (dp/tempid (datomic-lib)))
 (def transact (dp/transact (datomic-lib)))
 (def transact-async (dp/transact-async (datomic-lib)))
-(def tx-range (dp/tx-range (datomic-lib)))

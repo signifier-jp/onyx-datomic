@@ -12,27 +12,23 @@
     (if-let [t (:datomic/t task-map)]
       (d/as-of (d/db conn) t)
       (throw (ex-info ":datomic/t missing from write-datoms task-map." task-map))))
-(instance-of-datomic-function? [this v]
-  (instance? datomic.function.Function v)
-  )
+  (instance-of-datomic-function? [this v]
+    (instance? datomic.function.Function v))
+  (tx-range [this conn start-tx]
+    (let [log (d/log conn)]
+      (d/tx-range log start-tx nil)))
 
   dp/DatomicFns
   (as-of [_] d/as-of)
-  (connect [_] d/connect)
-  (create-database [_] d/create-database)
   (datoms [_] d/datoms)
   (db [_] d/db)
-  (delete-database [_] d/delete-database)
-  (entity [_] d/entity)
   (ident [_] d/ident)
   (index-range [_] d/index-range)
-  (log [_] d/log)
-  (next-t [_] d/next-t)
-  (q [_] d/q)
+  #_(log [_] d/log)
   (tempid [_] d/tempid)
   (transact [_] d/transact)
   (transact-async [_] d/transact-async)
-  (tx-range [_] d/tx-range))
+  #_(tx-range [_] d/tx-range))
 
 (defn new-datomic-impl []
   (->DatomicPeer))

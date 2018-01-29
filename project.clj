@@ -3,14 +3,16 @@
   :url "https://github.com/onyx-platform/onyx-datomic"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :repositories {"snapshots" {:url "https://clojars.org/repo"
-                              :username :env
-                              :password :env
-                              :sign-releases false}
-                 "releases" {:url "https://clojars.org/repo"
-                             :username :env
-                             :password :env
-                             :sign-releases false}}
+  :repositories {"snapshots"       {:url "https://clojars.org/repo"
+                                    :username :env
+                                    :password :env
+                                    :sign-releases false}
+                 "releases"         {:url "https://clojars.org/repo"
+                                     :username :env
+                                     :password :env
+                                     :sign-releases false}
+                 "my.datomic.com"   {:url "https://my.datomic.com/repo"
+                                     :creds :gpg}}
   :dependencies [[org.clojure/clojure "1.9.0"]
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
                  [org.onyxplatform/onyx "0.12.6"]]
@@ -23,10 +25,13 @@
                              [lein-update-dependency "0.1.2"]
                              [lein-pprint "1.1.1"]]
                    :resource-paths ["test-resources/"]}
-             :datomic-onprem {:source-paths ["src-datomic/peer"] 
+             :datomic-peer   {:source-paths ["src-datomic/peer"] 
                               :dependencies [[com.datomic/datomic-free "0.9.5544"]]}
-             :datomic-cloud {:source-paths ["src-datomic/cloud"] 
-                             :dependencies [[com.datomic/client-cloud "0.8.50"]]}
+             :datomic-client {:source-paths ["src-datomic/client"] 
+                              :dependencies [[com.datomic/client-pro "0.8.14"]
+                                             [com.datomic/datomic-pro "0.9.5544"]]}
+             :datomic-cloud  {:source-paths ["src-datomic/client"]
+                              :dependencies [[com.datomic/client-cloud "0.8.50"]]}
              :circle-ci {:jvm-opts ["-Xmx4g"]}
-             :default [:base :system :user :provided :dev :datomic-onprem]
-             :cloud [:base :system :user :provided :dev :datomic-cloud]})
+             :default [:base :system :user :provided :dev :datomic-peer]
+             :client [:base :system :user :provided :dev :datomic-client]})

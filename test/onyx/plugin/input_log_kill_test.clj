@@ -1,7 +1,7 @@
 (ns onyx.plugin.input-log-kill-test
   (:require [aero.core :refer [read-config]]
             [clojure.test :refer [deftest is testing]]
-            [onyx.datomic.api :as d]
+            [datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]

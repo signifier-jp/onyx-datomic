@@ -1,10 +1,11 @@
 (ns onyx.plugin.input-log-test
   (:require [aero.core :refer [read-config]]
             [clojure.test :refer [deftest is testing]]
-            [onyx.datomic.api :as d]
+            [datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
+            [onyx.datomic.api :refer [datomic-lib-type]]
             [onyx.plugin datomic
              [core-async :refer [take-segments! get-core-async-channels]]]
             [onyx.tasks
@@ -87,7 +88,11 @@
 (deftest datomic-input-log-test
   (let [{:keys [env-config peer-config datomic-config]}
         (read-config (clojure.java.io/resource "config.edn") {:profile :test})
-        db-uri (str "datomic:mem://" (java.util.UUID/randomUUID))]
+        db-uri (str (get-in (read-config
+                             (clojure.java.io/resource "config.edn")
+                             {:profile (datomic-lib-type)})
+                            [:datomic-config :datomic/uri])
+                    (java.util.UUID/randomUUID))]
     (try
       (with-test-env [test-env [4 env-config peer-config]]
         (testing "That we can read the initial transaction log"
