@@ -25,13 +25,12 @@
                              [lein-update-dependency "0.1.2"]
                              [lein-pprint "1.1.1"]]
                    :resource-paths ["test-resources/"]}
-             :datomic-peer   {:source-paths ["src-datomic/peer"] 
-                              :dependencies [[com.datomic/datomic-free "0.9.5544"]]}
-             :datomic-client {:source-paths ["src-datomic/client"] 
-                              :dependencies [[com.datomic/client-pro "0.8.14"]
+             :datomic-peer   {:dependencies [[com.datomic/datomic-free "0.9.5544"]]}
+             :datomic-client {:dependencies [[com.datomic/client-pro "0.8.14"]
+                                             ;; datomic-pro can be eliminated once tests use client API.
                                              [com.datomic/datomic-pro "0.9.5544"]]}
-             :datomic-cloud  {:source-paths ["src-datomic/client"]
-                              :dependencies [[com.datomic/client-cloud "0.8.50"]]}
+             :datomic-cloud  {:dependencies [[com.datomic/client-cloud "0.8.50"]]}
              :circle-ci {:jvm-opts ["-Xmx4g"]}
              :default [:base :system :user :provided :dev :datomic-peer]
-             :client [:base :system :user :provided :dev :datomic-client]})
+             :client [:base :system :user :provided :dev :datomic-client]
+             :cloud [:base :system :user :provided :dev :datomic-cloud]})
