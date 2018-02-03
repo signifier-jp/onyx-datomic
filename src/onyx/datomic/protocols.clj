@@ -13,8 +13,8 @@
 
 (defprotocol DatomicFns
   (as-of [this] "datomic as-of fn")
-  (datoms [this] "datomic datom fn")
   (db [this] "datomic db fn")
+  (datoms [this] "datomic datoms fn")
   (entity [this] "datomic entity fn")
   (ident [this] "datomic ident fn")
   (index-range [this] "datomic index-range fn")

@@ -77,7 +77,11 @@
   (tx-range [this conn start-tx]
     (d/tx-range conn {:start start-tx :end nil})) dp/DatomicFns
   (as-of [_] d/as-of)
-  (datoms [_] d/datoms)
+  (datoms [_] (fn [db index & components]
+                (let [arg-map {:index index}
+                      arg-map (when-not (empty? components)
+                                (assoc arg-map :components components))]
+                  (d/datoms db arg-map))))
   (db [_] d/db)
   (entity [_] #(d/pull % '[*] %2))
   (ident [_] _ident)

@@ -5,7 +5,7 @@
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
-            [onyx.datomic.api :as d :refer [datomic-lib-type]]
+            [onyx.datomic.api :as d []]
             [onyx.plugin datomic
              [core-async :refer [take-segments! get-core-async-channels]]]
             [onyx.tasks
@@ -83,12 +83,11 @@
                                           {:profile :test})
         datomic-config (:datomic-config (read-config
                                          (clojure.java.io/resource "config.edn")
-                                         {:profile (datomic-lib-type)}))
+                                         {:profile (d/datomic-lib-type)}))
         db-name (str (java.util.UUID/randomUUID))
         db-uri (str (:datomic/uri datomic-config) db-name)
         datomic-config (assoc datomic-config
                               :datomic/uri db-uri
-                              :datomic-client/db-name db-name
                               :datomic-cloud/db-name db-name)
         job (build-job datomic-config 10 1000)
         {:keys [in]} (get-core-async-channels job)]

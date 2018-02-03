@@ -5,14 +5,13 @@
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
-            [onyx.datomic.api :refer [datomic-lib-type db-name-in-uri]]
             [onyx.plugin datomic
              [core-async :refer [take-segments! get-core-async-channels]]]
             [onyx.tasks
              [datomic :refer [read-datoms]]
              [core-async :as core-async]]))
 
-(defn build-job [db-uri t batch-size batch-timeout]
+(defn build-job [datomic-config t batch-size batch-timeout]
   (let [batch-settings {:onyx/batch-size batch-size :onyx/batch-timeout batch-timeout}
         base-job (merge {:workflow [[:read-datoms :persist]]
                          :catalog []
@@ -23,22 +22,21 @@
                          :task-scheduler :onyx.task-scheduler/balanced})]
     (-> base-job
         (add-task (read-datoms :read-datoms
-                               (merge {:datomic/uri db-uri
-                                       :datomic-client/db-name (db-name-in-uri db-uri)
-                                       :datomic/t t
+                               (merge {:datomic/t t
                                        :datomic/datoms-index :avet
                                        :datomic/datoms-per-segment 20
                                        :datomic/datoms-components [:user/name "Mike"]
                                        :onyx/max-peers 1}
+                                      datomic-config
                                       batch-settings)))
         (add-task (core-async/output :persist batch-settings)))))
 
 (defn ensure-datomic!
   ([task-map data]
    (d/create-database task-map)
-   @(d/transact
-     (d/connect task-map)
-     data)))
+   (d/transact
+    (d/connect task-map)
+    data)))
 
 (def schema
   [{:db/ident :com.mdrogalis/people
@@ -62,25 +60,33 @@
    {:db/id (d/tempid :com.mdrogalis/people)
     :user/name "Kristen"}])
 
+(defn type-specific-schema []
+  (if (= :cloud (d/datomic-lib-type))
+    (mapv #(dissoc % :db.install/_partition) schema)
+    schema))
+
+(defn type-specific-people []
+  (mapv #(dissoc % :db/id) people))
+
 (deftest datomic-datoms-components-test
-  (let [{:keys [env-config
-                peer-config
-                datomic-config]} (read-config
-                                  (clojure.java.io/resource "config.edn")
-                                  {:profile :test})
+  (let [{:keys [env-config peer-config]} (read-config (clojure.java.io/resource "config.edn")
+                                                      {:profile :test})
+        datomic-config (:datomic-config (read-config
+                                         (clojure.java.io/resource "config.edn")
+                                         {:profile (d/datomic-lib-type)}))
         db-name (str (java.util.UUID/randomUUID))
-        db-uri (str (get-in (read-config
-                             (clojure.java.io/resource "config.edn")
-                             {:profile (datomic-lib-type)})
-                            [:datomic-config :datomic/uri])
-                    db-name)
+        db-uri (str (:datomic/uri datomic-config) db-name)
         datomic-config (assoc datomic-config
                               :datomic/uri db-uri
-                              :datomic-client/db-name db-name
                               :datomic-cloud/db-name db-name)
-        _ (mapv (partial ensure-datomic! datomic-config) [[] schema people])
-        t (d/next-t (d/db (d/connect db-uri)))
-        job (build-job db-uri t 10 1000)
+        datomic-config (if (string? (:datomic-cloud/proxy-port datomic-config))
+                         (assoc datomic-config
+                                :datomic-cloud/proxy-port (Integer/parseInt
+                                                           (:datomic-cloud/proxy-port datomic-config)))
+                         datomic-config)
+        _ (mapv (partial ensure-datomic! datomic-config) [[] (type-specific-schema) (type-specific-people)])
+        t (d/next-t (d/db (d/connect datomic-config)))
+        job (build-job datomic-config t 10 1000)
         {:keys [persist]} (get-core-async-channels job)]
     (try
       (with-test-env [test-env [3 env-config peer-config]]
@@ -89,6 +95,6 @@
              (onyx.api/submit-job peer-config)
              :job-id
              (onyx.test-helper/feedback-exception! peer-config))
-        (is (= (set (map #(nth % 2) (mapcat :datoms (take-segments! persist 50))))
-               #{"Mike"})))
-      (finally (d/delete-database db-uri)))))
+        (is (= #{"Mike"}
+               (set (map #(nth % 2) (mapcat :datoms (take-segments! persist 50)))))))
+      (finally (d/delete-database datomic-config)))))
