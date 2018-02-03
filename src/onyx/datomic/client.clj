@@ -12,7 +12,8 @@
                               datomic-cloud/proxy-port] :as task-map}]
   (let [region (or region (System/getenv "DATOMIC_CLOUD_REGION"))
         system (or system (System/getenv "DATOMIC_CLOUD_SYSTEM"))
-        proxy-port (or proxy-port (System/getenv "DATOMIC_CLOUD_PROXY_PORT"))]
+        proxy-port (or proxy-port (System/getenv "DATOMIC_CLOUD_PROXY_PORT"))
+        proxy-port (when (string? proxy-port) (Integer/parseInt proxy-port))]
     (d/client  {:server-type :cloud
                 :region region
                 :system system
@@ -31,55 +32,59 @@
                 :secret secret
                 :endpoint endpoint})))
 
-(defn- db-name-in-uri [uri]
-  (-> uri
-      URI.
-      .getSchemeSpecificPart
-      (str/split #"/")
-      last))
-
 (def cloud-client (memoize _cloud-client))
 (def peer-server-client (memoize _peer-server-client))
 
 (defn- safe-connect-cloud [{:keys [datomic-cloud/db-name] :as task-map}]
   (when (nil? db-name)
-    (throw (ex-info "either :datomic-cloud/db-name is required to connect.")))
+    (throw (ex-info "either :datomic-cloud/db-name is required to connect." task-map)))
   (d/connect (cloud-client task-map) {:db-name db-name}))
 
-(defn- safe-connect-client [{:keys [datomic-client/db-name datomic/uri] :as task-map}]
-  (when (and (nil? db-name) (nil? uri))
-    (throw (ex-info "either :datomic-client/db-name or :datomic-uri is required to connect.")))
-  (log/info "Connecting to database " db-name " or " uri)
-  (d/connect (peer-server-client task-map) {:db-name (or db-name (db-name-in-uri uri))}))
+(defn- safe-connect-client [{:keys [datomic-client/db-name] :as task-map}]
+  (when (nil? db-name)
+    (throw (ex-info ":datomic-client/db-name is required to connect." task-map)))
+  (log/info "Connecting to database " db-name)
+  (d/connect (peer-server-client task-map) {:db-name db-name}))
 
 (def not-implemented-yet #(throw (ex-info "not implmented yet" {})))
 
 (def _ident #(-> (d/pull % '[:db/ident] %2) :db/ident))
 
-(deftype DatomicCloud []
+(defrecord DatomicClient [lib-type]
   dp/DatomicHelpers
-  (safe-connect [_ {:keys [datomic-cloud/db-name] :as task-map}]
-    (log/spy task-map)
-    (if db-name
-      (d/connect (cloud-client task-map) task-map)
-      (d/connect (client-client task-map) task-map)))
+  (cas-key [_] :db/cas)
+  (create-database [_ task-map]
+    (if (= :cloud lib-type)
+      (d/create-database (cloud-client task-map) {:db-name (:datomic-cloud/db-name task-map)})
+      (throw (ex-info "Datomic client for On-Prem doesn't support create-database. Use peer API." task-map))))
+  (delete-database [_ task-map]
+    (if (= :cloud lib-type)
+      (d/delete-database (cloud-client task-map) {:db-name (:datomic-cloud/db-name task-map)})
+      (throw (ex-info "Datomic client for On-Prem doesn't support delete-database. Use peer API." task-map))))
+  (instance-of-datomic-function? [this v] false)
+  (next-t [_ db]
+    (:next-t db))
+  (safe-connect [_ task-map]
+    (if (= :cloud lib-type)
+      (safe-connect-cloud task-map)
+      (safe-connect-client task-map)))
   (safe-as-of [_ task-map conn]
     (if-let [t (:datomic/t task-map)]
       (d/as-of (d/db conn) t)
       (throw (ex-info ":datomic/t missing from write-datoms task-map." task-map))))
-  (instance-of-datomic-function? [this v] false)
+  (transact [this conn data]
+    (d/transact conn {:tx-data data}))
   (tx-range [this conn start-tx]
-    (d/tx-range conn {:start start-tx :end nil}))
-
-  dp/DatomicFns
+    (d/tx-range conn {:start start-tx :end nil})) dp/DatomicFns
   (as-of [_] d/as-of)
   (datoms [_] d/datoms)
   (db [_] d/db)
+  (entity [_] #(d/pull % '[*] %2))
   (ident [_] _ident)
   (index-range [_] d/index-range)
+  (q [_] d/q)
   (tempid [_] str)
-  (transact [_] d/transact)
-  (transact-async [_] (future d/transact)))
+  (transact-async [_] d/transact))
 
-(defn new-datomic-impl []
-  (->DatomicCloud))
+(defn new-datomic-impl [lib-type]
+  (->DatomicClient lib-type))

@@ -1,7 +1,7 @@
 (ns onyx.plugin.input-datoms-components-test
   (:require [aero.core :refer [read-config]]
             [clojure.test :refer [deftest is]]
-            [datomic.api :as d]
+            [onyx.datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
@@ -34,19 +34,17 @@
         (add-task (core-async/output :persist batch-settings)))))
 
 (defn ensure-datomic!
-  ([db-uri data]
-   (d/create-database db-uri)
+  ([task-map data]
+   (d/create-database task-map)
    @(d/transact
-     (d/connect db-uri)
+     (d/connect task-map)
      data)))
 
 (def schema
-  [{:db/id #db/id [:db.part/db]
-    :db/ident :com.mdrogalis/people
+  [{:db/ident :com.mdrogalis/people
     :db.install/_partition :db.part/db}
 
-   {:db/id #db/id [:db.part/db]
-    :db/ident :user/name
+   {:db/ident :user/name
     :db/valueType :db.type/string
     :db/unique :db.unique/identity
     :db/cardinality :db.cardinality/one
@@ -65,15 +63,22 @@
     :user/name "Kristen"}])
 
 (deftest datomic-datoms-components-test
-  (let [{:keys [env-config peer-config]} (read-config
-                                          (clojure.java.io/resource "config.edn")
-                                          {:profile :test})
+  (let [{:keys [env-config
+                peer-config
+                datomic-config]} (read-config
+                                  (clojure.java.io/resource "config.edn")
+                                  {:profile :test})
+        db-name (str (java.util.UUID/randomUUID))
         db-uri (str (get-in (read-config
                              (clojure.java.io/resource "config.edn")
                              {:profile (datomic-lib-type)})
                             [:datomic-config :datomic/uri])
-                    (java.util.UUID/randomUUID))
-        _ (mapv (partial ensure-datomic! db-uri) [[] schema people])
+                    db-name)
+        datomic-config (assoc datomic-config
+                              :datomic/uri db-uri
+                              :datomic-client/db-name db-name
+                              :datomic-cloud/db-name db-name)
+        _ (mapv (partial ensure-datomic! datomic-config) [[] schema people])
         t (d/next-t (d/db (d/connect db-uri)))
         job (build-job db-uri t 10 1000)
         {:keys [persist]} (get-core-async-channels job)]

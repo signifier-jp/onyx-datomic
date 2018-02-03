@@ -1,9 +1,19 @@
 (ns onyx.datomic.peer
-  (:require [onyx.datomic.protocols :as dp]
+  (:require [clojure.string :as str]
+            [onyx.datomic.protocols :as dp]
             [datomic.api :as d]))
 
-(deftype DatomicPeer []
+(defrecord DatomicPeer [lib-type]
   dp/DatomicHelpers
+  (cas-key [_] :db.fn/cas)
+  (create-database [_ {:keys [datomic/uri] :as task-map}]
+    (d/create-database uri))
+  (delete-database [_ {:keys [datomic/uri] :as task-map}]
+    (d/delete-database uri))
+  (instance-of-datomic-function? [this v]
+    (instance? datomic.function.Function v))
+  (next-t [_ db]
+    (d/next-t db))
   (safe-connect [_ task-map]
     (if-let [uri (:datomic/uri task-map)]
       (d/connect uri)
@@ -12,9 +22,9 @@
     (if-let [t (:datomic/t task-map)]
       (d/as-of (d/db conn) t)
       (throw (ex-info ":datomic/t missing from write-datoms task-map." task-map))))
-  (instance-of-datomic-function? [this v]
-    (instance? datomic.function.Function v))
-  (tx-range [this conn start-tx]
+  (transact [_ conn data]
+    @(d/transact conn data))
+  (tx-range [_ conn start-tx]
     (let [log (d/log conn)]
       (d/tx-range log start-tx nil)))
 
@@ -22,13 +32,12 @@
   (as-of [_] d/as-of)
   (datoms [_] d/datoms)
   (db [_] d/db)
+  (entity [_] d/entity)
   (ident [_] d/ident)
   (index-range [_] d/index-range)
-  #_(log [_] d/log)
+  (q [_] d/q)
   (tempid [_] d/tempid)
-  (transact [_] d/transact)
-  (transact-async [_] d/transact-async)
-  #_(tx-range [_] d/tx-range))
+  (transact-async [_] d/transact-async))
 
-(defn new-datomic-impl []
-  (->DatomicPeer))
+(defn new-datomic-impl [lib-type]
+  (->DatomicPeer lib-type))

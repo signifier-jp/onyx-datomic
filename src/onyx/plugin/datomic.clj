@@ -319,7 +319,7 @@
 
   (write-batch [this {:keys [onyx.core/write-batch]} replica _]
     (run! (fn [segment]
-            @(d/transact conn (:tx segment)))
+            (d/transact conn (:tx segment)))
           write-batch)
     true))
 

@@ -10,9 +10,7 @@
                  "releases"         {:url "https://clojars.org/repo"
                                      :username :env
                                      :password :env
-                                     :sign-releases false}
-                 "my.datomic.com"   {:url "https://my.datomic.com/repo"
-                                     :creds :gpg}}
+                                     :sign-releases false}}
   :dependencies [[org.clojure/clojure "1.9.0"]
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
                  [org.onyxplatform/onyx "0.12.6"]]
@@ -26,11 +24,7 @@
                              [lein-pprint "1.1.1"]]
                    :resource-paths ["test-resources/"]}
              :datomic-peer   {:dependencies [[com.datomic/datomic-free "0.9.5544"]]}
-             :datomic-client {:dependencies [[com.datomic/client-pro "0.8.14"]
-                                             ;; datomic-pro can be eliminated once tests use client API.
-                                             [com.datomic/datomic-pro "0.9.5544"]]}
              :datomic-cloud  {:dependencies [[com.datomic/client-cloud "0.8.50"]]}
              :circle-ci {:jvm-opts ["-Xmx4g"]}
              :default [:base :system :user :provided :dev :datomic-peer]
-             :client [:base :system :user :provided :dev :datomic-client]
-             :cloud [:base :system :user :provided :dev :datomic-cloud]})
+             :cloud   [:base :system :user :provided :dev :datomic-cloud]})
