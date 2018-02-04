@@ -5,7 +5,7 @@
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
-            [onyx.datomic.api :as d []]
+            [onyx.datomic.api :as d]
             [onyx.plugin datomic
              [core-async :refer [take-segments! get-core-async-channels]]]
             [onyx.tasks
@@ -32,42 +32,28 @@
                                                     batch-settings))))))
 
 (defn ensure-datomic!
-  ([task-map data]
-   (d/create-database task-map)
+  ([datomic-config data]
+   (d/create-database datomic-config)
    (d/transact
-    (d/connect task-map)
+    (d/connect datomic-config)
     data)))
 
 (def schema
-  [{:db/id "1"
-    :db/ident :com.mdrogalis/people
-    :db.install/_partition :db.part/db}
-
-   {:db/id "2"
-    :db/ident :name
+  [{:db/ident :com.mdrogalis/people}
+   {:db/ident :name
     :db/valueType :db.type/string
     :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-
-   {:db/id "3"
-    :db/ident :uuid
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :uuid
     :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-
-   {:db/id "4"
-    :db/ident :age
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :age
     :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}])
-
-(defn cloud-schema []
-  (mapv #(dissoc % :db.install/_partition) schema))
+    :db/cardinality :db.cardinality/one}])
 
 (def txes
-  [{:tx (if (= :cloud (d/datomic-lib-type)) (cloud-schema) schema)}
-   {:tx (map #(assoc % :db/id (d/tempid (:name %)))
+  [{:tx schema}
+   {:tx (map #(assoc % :db/id (:name %))
              [{:name "Mike" :age 27 :uuid #uuid "f47ac10b-58cc-4372-a567-0e02b2c3d479"}
               {:name "Dorrene" :age 21}
               {:name "Benti" :age 10}

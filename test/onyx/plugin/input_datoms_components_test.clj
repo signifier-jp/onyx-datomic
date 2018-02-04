@@ -32,41 +32,26 @@
         (add-task (core-async/output :persist batch-settings)))))
 
 (defn ensure-datomic!
-  ([task-map data]
-   (d/create-database task-map)
+  ([datomic-config data]
+   (d/create-database datomic-config)
    (d/transact
-    (d/connect task-map)
+    (d/connect datomic-config)
     data)))
 
 (def schema
-  [{:db/ident :com.mdrogalis/people
-    :db.install/_partition :db.part/db}
+  [{:db/ident :com.mdrogalis/people}
 
    {:db/ident :user/name
     :db/valueType :db.type/string
     :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}])
+    :db/cardinality :db.cardinality/one}])
 
 (def people
-  [{:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Mike"}
-   {:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Dorrene"}
-   {:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Benti"}
-   {:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Derek"}
-   {:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Kristen"}])
-
-(defn type-specific-schema []
-  (if (= :cloud (d/datomic-lib-type))
-    (mapv #(dissoc % :db.install/_partition) schema)
-    schema))
-
-(defn type-specific-people []
-  (mapv #(dissoc % :db/id) people))
+  [{:user/name "Mike"}
+   {:user/name "Dorrene"}
+   {:user/name "Benti"}
+   {:user/name "Derek"}
+   {:user/name "Kristen"}])
 
 (deftest datomic-datoms-components-test
   (let [{:keys [env-config peer-config]} (read-config (clojure.java.io/resource "config.edn")
@@ -84,7 +69,7 @@
                                 :datomic-cloud/proxy-port (Integer/parseInt
                                                            (:datomic-cloud/proxy-port datomic-config)))
                          datomic-config)
-        _ (mapv (partial ensure-datomic! datomic-config) [[] (type-specific-schema) (type-specific-people)])
+        _ (mapv (partial ensure-datomic! datomic-config) [[] schema people])
         t (d/next-t (d/db (d/connect datomic-config)))
         job (build-job datomic-config t 10 1000)
         {:keys [persist]} (get-core-async-channels job)]
