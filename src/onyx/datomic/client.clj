@@ -9,7 +9,7 @@
                               datomic-cloud/region
                               datomic-cloud/query-group
                               datomic-cloud/endpoint
-                              datomic-cloud/proxy-port] :as task-map}]
+                              datomic-cloud/proxy-port] :as datomic-config}]
   (let [region (or region (System/getenv "DATOMIC_CLOUD_REGION"))
         system (or system (System/getenv "DATOMIC_CLOUD_SYSTEM"))
         proxy-port (or proxy-port (System/getenv "DATOMIC_CLOUD_PROXY_PORT"))
@@ -23,7 +23,7 @@
 
 (defn- _peer-server-client [{:keys [datomic-client/access-key
                                     datomic-client/secret
-                                    datomic-client/endpoint] :as task-map}]
+                                    datomic-client/endpoint] :as datomic-config}]
   (let [access-key (or access-key (System/getenv "DATOMIC_CLIENT_ACCESS_KEY"))
         secret (or secret (System/getenv "DATOMIC_CLIENT_SECRET"))
         endpoint (or endpoint (System/getenv "DATOMIC_CLIENT_ENDPOINT"))]
@@ -35,43 +35,41 @@
 (def cloud-client (memoize _cloud-client))
 (def peer-server-client (memoize _peer-server-client))
 
-(defn- safe-connect-cloud [{:keys [datomic-cloud/db-name] :as task-map}]
+(defn- safe-connect-cloud [{:keys [datomic-cloud/db-name] :as datomic-config}]
   (when (nil? db-name)
-    (throw (ex-info "either :datomic-cloud/db-name is required to connect." task-map)))
-  (d/connect (cloud-client task-map) {:db-name db-name}))
+    (throw (ex-info "either :datomic-cloud/db-name is required to connect." datomic-config)))
+  (d/connect (cloud-client datomic-config) {:db-name db-name}))
 
-(defn- safe-connect-client [{:keys [datomic-client/db-name] :as task-map}]
+(defn- safe-connect-client [{:keys [datomic-client/db-name] :as datomic-config}]
   (when (nil? db-name)
-    (throw (ex-info ":datomic-client/db-name is required to connect." task-map)))
+    (throw (ex-info ":datomic-client/db-name is required to connect." datomic-config)))
   (log/info "Connecting to database " db-name)
-  (d/connect (peer-server-client task-map) {:db-name db-name}))
+  (d/connect (peer-server-client datomic-config) {:db-name db-name}))
 
 (def not-implemented-yet #(throw (ex-info "not implmented yet" {})))
-
-(def _ident #(-> (d/pull % '[:db/ident] %2) :db/ident))
 
 (defrecord DatomicClient [lib-type]
   dp/DatomicHelpers
   (cas-key [_] :db/cas)
-  (create-database [_ task-map]
+  (create-database [_ datomic-config]
     (if (= :cloud lib-type)
-      (d/create-database (cloud-client task-map) {:db-name (:datomic-cloud/db-name task-map)})
-      (throw (ex-info "Datomic client for On-Prem doesn't support create-database. Use peer API." task-map))))
-  (delete-database [_ task-map]
+      (d/create-database (cloud-client datomic-config) {:db-name (:datomic-cloud/db-name datomic-config)})
+      (throw (ex-info "Datomic client for On-Prem doesn't support create-database. Use peer API." datomic-config))))
+  (delete-database [_ datomic-config]
     (if (= :cloud lib-type)
-      (d/delete-database (cloud-client task-map) {:db-name (:datomic-cloud/db-name task-map)})
-      (throw (ex-info "Datomic client for On-Prem doesn't support delete-database. Use peer API." task-map))))
+      (d/delete-database (cloud-client datomic-config) {:db-name (:datomic-cloud/db-name datomic-config)})
+      (throw (ex-info "Datomic client for On-Prem doesn't support delete-database. Use peer API." datomic-config))))
   (instance-of-datomic-function? [this v] false)
   (next-t [_ db]
     (:next-t db))
-  (safe-connect [_ task-map]
+  (safe-connect [_ datomic-config]
     (if (= :cloud lib-type)
-      (safe-connect-cloud task-map)
-      (safe-connect-client task-map)))
-  (safe-as-of [_ task-map conn]
-    (if-let [t (:datomic/t task-map)]
+      (safe-connect-cloud datomic-config)
+      (safe-connect-client datomic-config)))
+  (safe-as-of [_ datomic-config conn]
+    (if-let [t (:datomic/t datomic-config)]
       (d/as-of (d/db conn) t)
-      (throw (ex-info ":datomic/t missing from write-datoms task-map." task-map))))
+      (throw (ex-info ":datomic/t missing from write-datoms datomic-config." datomic-config))))
   (transact [this conn data]
     (d/transact conn {:tx-data data}))
   (tx-range [this conn start-tx]
@@ -83,8 +81,9 @@
                                 (assoc arg-map :components components))]
                   (d/datoms db arg-map))))
   (db [_] d/db)
-  (entity [_] #(d/pull % '[*] %2))
-  (ident [_] _ident)
+  (entity [_] (fn [db eid] (d/pull db '[*] eid)))
+  (ident [_] (fn [db eid] (-> (d/pull db '[:db/ident] eid)
+                              :db/ident)))
   (index-range [_] (fn [db attrid start end]
                      (d/index-range db {:attrid attrid :start start :end end})))
   (q [_] d/q)
