@@ -2,10 +2,10 @@
   "Tests whether the plugin is fault tolerant. Won't make any progress if it restarts each time"
   (:require [aero.core :refer [read-config]]
             [clojure.test :refer [deftest is]]
-            [onyx.datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
+            [onyx.datomic.api :as d]
             [onyx.plugin datomic
              [core-async :refer [take-segments! get-core-async-channels]]]
             [onyx.tasks

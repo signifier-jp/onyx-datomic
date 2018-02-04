@@ -1,10 +1,10 @@
 (ns onyx.plugin.input-datoms-components-test
   (:require [aero.core :refer [read-config]]
             [clojure.test :refer [deftest is]]
-            [onyx.datomic.api :as d]
             [onyx api
              [job :refer [add-task]]
              [test-helper :refer [with-test-env]]]
+            [onyx.datomic.api :as d]
             [onyx.plugin datomic
              [core-async :refer [take-segments! get-core-async-channels]]]
             [onyx.tasks

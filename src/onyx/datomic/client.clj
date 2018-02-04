@@ -85,7 +85,8 @@
   (db [_] d/db)
   (entity [_] #(d/pull % '[*] %2))
   (ident [_] _ident)
-  (index-range [_] d/index-range)
+  (index-range [_] (fn [db attrid start end]
+                     (d/index-range db {:attrid attrid :start start :end end})))
   (q [_] d/q)
   (tempid [_] str)
   (transact-async [_] d/transact))
