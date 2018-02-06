@@ -5,6 +5,8 @@
             [taoensso.timbre :as log])
   (:import [java.net URI]))
 
+(def tempid-counters (atom -1000000))
+
 (defn- _cloud-client [{:keys [datomic-cloud/system
                               datomic-cloud/region
                               datomic-cloud/query-group
@@ -73,12 +75,14 @@
   (transact [this conn data]
     (d/transact conn {:tx-data data}))
   (tx-range [this conn start-tx]
-    (d/tx-range conn {:start start-tx :end nil})) dp/DatomicFns
+    (d/tx-range conn {:start start-tx}))
+
+  dp/DatomicFns
   (as-of [_] d/as-of)
   (datoms [_] (fn [db index & components]
-                (let [arg-map {:index index}
-                      arg-map (when-not (empty? components)
-                                (assoc arg-map :components components))]
+                (let [arg-map (if (empty? components)
+                                {:index index}
+                                {:index index :components components})]
                   (d/datoms db arg-map))))
   (db [_] d/db)
   (entity [_] (fn [db eid] (d/pull db '[*] eid)))
@@ -87,7 +91,7 @@
   (index-range [_] (fn [db attrid start end]
                      (d/index-range db {:attrid attrid :start start :end end})))
   (q [_] d/q)
-  (tempid [_] str)
+  (tempid [_] (fn [partition & n] (swap! tempid-counters dec)))
   (transact-async [_] d/transact))
 
 (defn new-datomic-impl [lib-type]

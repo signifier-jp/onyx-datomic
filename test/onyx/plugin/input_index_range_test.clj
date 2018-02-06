@@ -66,7 +66,7 @@
     (mapv #(dissoc % :db/index) schema)
     schema))
 
-(deftest read-index-range-test
+(deftest ^:cloud read-index-range-test
   (let [{:keys [env-config peer-config]} (read-config
                                           (clojure.java.io/resource "config.edn")
                                           {:profile :test})

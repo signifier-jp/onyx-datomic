@@ -63,7 +63,7 @@
    {:tx [[:db/retract [:name "Dorrene"] :age 21]]}
    {:tx [[(d/cas-key) [:name "Benti"] :age 10 18]]}])
 
-(deftest datomic-tx-output-test
+(deftest ^:cloud datomic-tx-output-test
   (let [{:keys [env-config peer-config]} (read-config
                                           (clojure.java.io/resource "config.edn")
                                           {:profile :test})

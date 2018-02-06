@@ -277,7 +277,7 @@
   (write-batch [this {:keys [onyx.core/write-batch]} replica _]
     @(d/transact conn
                  (map (fn [segment]
-                        (if (and partition (not (sequential? segment)))
+                        (if (and partition (not (sequential? segment)) (= :peer (d/datomic-lib-type)))
                           (assoc segment :db/id (d/tempid partition))
                           segment))
                       write-batch))

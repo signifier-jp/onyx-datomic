@@ -53,7 +53,7 @@
    {:user/name "Derek"}
    {:user/name "Kristen"}])
 
-(deftest datomic-datoms-components-test
+(deftest ^:cloud datomic-datoms-components-test
   (let [{:keys [env-config peer-config]} (read-config (clojure.java.io/resource "config.edn")
                                                       {:profile :test})
         datomic-config (:datomic-config (read-config

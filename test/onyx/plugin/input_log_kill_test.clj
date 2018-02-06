@@ -61,7 +61,7 @@
       (Thread/sleep 5)
       (ensure-datomic! datomic-config people2))))
 
-(deftest ^:ci datomic-input-log-kill-test
+(deftest ^:ci ^:cloud datomic-input-log-kill-test
   (let [{:keys [env-config peer-config]}
         (read-config (clojure.java.io/resource "config.edn") {:profile :test})
         datomic-config (:datomic-config (read-config

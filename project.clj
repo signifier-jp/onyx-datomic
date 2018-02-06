@@ -16,6 +16,7 @@
                  [org.onyxplatform/onyx "0.12.6"]]
   :test-selectors {:default (complement :ci)
                    :ci :ci
+                   :cloud :cloud
                    :all (constantly true)}
   
   :profiles {:dev {:dependencies [[aero "0.2.0"]]
