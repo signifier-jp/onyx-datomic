@@ -8,7 +8,8 @@
   (next-t [this db] "Return next-t.")
   (safe-connect [this datomic-config] "Return datomic connection.")
   (safe-as-of [this datomic-config conn] "Returns the value of the database as of some time-point.")
-  (transact [this conn data] "datomic transact"))
+  (transact [this conn data] "datomic transact")
+  (transact-async [this conn data] "datomic transact that returns a future"))
 
 (defprotocol DatomicFns
   (as-of [this] "datomic as-of fn")
@@ -19,5 +20,4 @@
   (index-range [this] "datomic index-range fn")
   (q [this] "datomic q fn")
   (tempid [this] "datomic tempid fn")
-  (transact-async [this] "datomic transact-async fn")
   (tx-range [this] "datomic tx-range fn"))
