@@ -24,9 +24,6 @@
       (throw (ex-info ":datomic/t missing from write-datoms datomic-config." datomic-config))))
   (transact [_ conn data]
     @(d/transact conn data))
-  (tx-range [_ conn start-tx]
-    (let [log (d/log conn)]
-      (d/tx-range log start-tx nil)))
 
   dp/DatomicFns
   (as-of [_] d/as-of)
@@ -37,7 +34,10 @@
   (index-range [_] d/index-range)
   (q [_] d/q)
   (tempid [_] d/tempid)
-  (transact-async [_] d/transact-async))
+  (transact-async [_] d/transact-async)
+  (tx-range [_] (fn [conn start-tx]
+                  (let [log (d/log conn)]
+                    (d/tx-range log start-tx nil)))))
 
 (defn new-datomic-impl [lib-type]
   (->DatomicPeer lib-type))

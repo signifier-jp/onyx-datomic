@@ -40,7 +40,6 @@
 (def safe-connect (partial dp/safe-connect (datomic-lib)))
 (def safe-as-of (partial dp/safe-as-of (datomic-lib)))
 (def transact (partial dp/transact (datomic-lib)))
-(def tx-range (partial dp/tx-range (datomic-lib)))
 
 (def as-of (dp/as-of (datomic-lib)))
 (def connect safe-connect)
@@ -52,3 +51,4 @@
 (def q (dp/q (datomic-lib)))
 (def tempid (dp/tempid (datomic-lib)))
 (def transact-async (dp/transact-async (datomic-lib)))
+(def tx-range (dp/tx-range (datomic-lib)))

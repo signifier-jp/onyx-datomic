@@ -74,8 +74,6 @@
       (throw (ex-info ":datomic/t missing from write-datoms datomic-config." datomic-config))))
   (transact [this conn data]
     (d/transact conn {:tx-data data}))
-  (tx-range [this conn start-tx]
-    (d/tx-range conn {:start start-tx}))
 
   dp/DatomicFns
   (as-of [_] d/as-of)
@@ -92,7 +90,11 @@
                      (d/index-range db {:attrid attrid :start start :end end})))
   (q [_] d/q)
   (tempid [_] (fn [partition & n] (swap! tempid-counters dec)))
-  (transact-async [_] d/transact))
+  (transact-async [_] d/transact)
+  (tx-range [_] (fn [conn start-tx & end-tx]
+                  (if (empty? end-tx)
+                    (d/tx-range conn {:start start-tx})
+                    (d/tx-range conn {:start start-tx :end (first end-tx)})))))
 
 (defn new-datomic-impl [lib-type]
   (->DatomicClient lib-type))
