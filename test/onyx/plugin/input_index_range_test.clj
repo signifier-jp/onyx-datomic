@@ -62,7 +62,7 @@
   {:names (d/q query datoms)})
 
 (defn- type-specific-schema []
-  (if (= :cloud (d/datomic-lib-type))
+  (if (d/client?)
     (mapv #(dissoc % :db/index) schema)
     schema))
 

@@ -23,7 +23,7 @@
               s)) [] datoms))
 
 (defn my-test-query [{:keys [datoms] :as segment}]
-  (if (= :cloud (d/datomic-lib-type))
+  (if (d/client?)
     {:names (find-short-names datoms)}
     {:names (d/q query datoms)}))
 
@@ -59,30 +59,23 @@
    data))
 
 (def schema
-  [{;:db/id #db/id [:db.part/db]
-    :db/ident :com.mdrogalis/people
+  [{:db/ident :com.mdrogalis/people
     :db.install/_partition :db.part/db}
 
-   {;:db/id #db/id [:db.part/db]
-    :db/ident :user/name
+   {:db/ident :user/name
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}])
 
 (def people
-  [{;:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Mike"}
-   {;:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Dorrene"}
-   {;:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Benti"}
-   {;:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Derek"}
-   {;:db/id (d/tempid :com.mdrogalis/people)
-    :user/name "Kristen"}])
+  [{:user/name "Mike"}
+   {:user/name "Dorrene"}
+   {:user/name "Benti"}
+   {:user/name "Derek"}
+   {:user/name "Kristen"}])
 
 (defn type-specific-tx [tx]
-  (if (= :cloud (d/datomic-lib-type))
+  (if (d/client?)
     (mapv #(dissoc % :db/id :db.install/_partition) tx)
     tx))
 

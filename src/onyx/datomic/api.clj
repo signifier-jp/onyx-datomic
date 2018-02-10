@@ -21,6 +21,16 @@
   :client (require '[onyx.datomic.client :refer [new-datomic-impl]])
   :cloud  (require '[onyx.datomic.client :refer [new-datomic-impl]]))
 
+(defn client? []
+  (or (= :cloud (datomic-lib-type))
+      (= :client (datomic-lib-type))))
+
+(defn peer? []
+  (= :peer (datomic-lib-type)))
+
+(defn cloud? []
+  (= :cloud (datomic-lib-type)))
+
 (defn- _datomic-lib []
   (new-datomic-impl (datomic-lib-type)))
 

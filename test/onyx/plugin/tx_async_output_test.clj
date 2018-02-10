@@ -39,25 +39,21 @@
    data))
 
 (def schema
-  [{;:db/id #db/id [:db.part/db]
-    :db/ident :com.mdrogalis/people
+  [{:db/ident :com.mdrogalis/people
     :db.install/_partition :db.part/db}
 
-   {;:db/id #db/id [:db.part/db]
-    :db/ident :name
+   {:db/ident :name
     :db/valueType :db.type/string
     :db/unique :db.unique/identity
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
 
-   {;:db/id #db/id [:db.part/db]
-    :db/ident :uuid
+   {:db/ident :uuid
     :db/valueType :db.type/uuid
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
 
-   {;:db/id #db/id [:db.part/db]
-    :db/ident :age
+   {:db/ident :age
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}])
@@ -73,7 +69,7 @@
    {:tx [[:db/retract [:name "Dorrene"] :age 21]]}
    {:tx [[(d/cas-key) [:name "Benti"] :age 10 18]]}])
 
-(deftest datomic-tx-output-test
+(deftest ^:cloud datomic-tx-output-test
   (let [{:keys [env-config peer-config]} (read-config
                                           (clojure.java.io/resource "config.edn")
                                           {:profile :test})

@@ -143,7 +143,7 @@
 
 (defn log-entry->segment [entry]
   (update (into {} entry)
-          :data
+          (if (d/peer?) :data :tx-data)
           (fn [vs] (keep unroll-log-datom vs))))
 
 (defn inject-read-log-resources
@@ -277,7 +277,7 @@
   (write-batch [this {:keys [onyx.core/write-batch]} replica _]
     (d/transact conn
                 (map (fn [segment]
-                       (if (and partition (not (sequential? segment)) (= :peer (d/datomic-lib-type)))
+                       (if (and partition (not (sequential? segment)) (d/peer?))
                          (assoc segment :db/id (d/tempid partition))
                          segment))
                      write-batch))

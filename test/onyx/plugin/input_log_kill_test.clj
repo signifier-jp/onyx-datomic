@@ -69,6 +69,14 @@
                                          {:profile (d/datomic-lib-type)}))
         db-name (str (java.util.UUID/randomUUID))
         db-uri (str (:datomic/uri datomic-config) db-name)
+        datomic-config (assoc datomic-config
+                              :datomic/uri db-uri
+                              :datomic-cloud/db-name db-name)
+        datomic-config (if (string? (:datomic-cloud/proxy-port datomic-config))
+                         (assoc datomic-config
+                                :datomic-cloud/proxy-port (Integer/parseInt
+                                                           (:datomic-cloud/proxy-port datomic-config)))
+                         datomic-config)
         job (build-job datomic-config 10 1000)
         {:keys [persist]} (get-core-async-channels job)
         job-id (atom nil)

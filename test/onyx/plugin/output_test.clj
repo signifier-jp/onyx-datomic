@@ -56,7 +56,7 @@
    {:name "Kristen"}
    {:name "Derek"}])
 
-(deftest datomic-tx-output-test
+(deftest ^:cloud datomic-tx-output-test
   (let [{:keys [env-config peer-config]} (read-config
                                           (clojure.java.io/resource "config.edn")
                                           {:profile :test})
