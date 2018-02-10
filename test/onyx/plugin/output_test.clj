@@ -39,12 +39,10 @@
    data))
 
 (def schema
-  [{;:db/id #db/id [:db.part/db]
-    :db/ident :com.mdrogalis/people
+  [{:db/ident :com.mdrogalis/people
     :db.install/_partition :db.part/db}
 
-   {;:db/id #db/id [:db.part/db]
-    :db/ident :name
+   {:db/ident :name
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}])
