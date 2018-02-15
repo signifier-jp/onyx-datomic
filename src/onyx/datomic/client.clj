@@ -39,7 +39,7 @@
 
 (defn- safe-connect-cloud [{:keys [datomic-cloud/db-name] :as datomic-config}]
   (when (nil? db-name)
-    (throw (ex-info "either :datomic-cloud/db-name is required to connect." datomic-config)))
+    (throw (ex-info ":datomic-cloud/db-name is required to connect." datomic-config)))
   (d/connect (cloud-client datomic-config) {:db-name db-name}))
 
 (defn- safe-connect-client [{:keys [datomic-client/db-name] :as datomic-config}]
